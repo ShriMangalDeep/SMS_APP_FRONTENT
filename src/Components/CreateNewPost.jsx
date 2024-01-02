@@ -109,10 +109,11 @@ const CreateNewPost = () => {
     const uploadToS3 = async (files,productName) => {
         try {
             // Configure AWS SDK with your credentials and S3 bucket information
+            console.log("======================>",process.env.REACT_APP_AWS_ACCESS_KEY)
             AWS.config.update({
-                accessKeyId: process.env.AWS_ACCESS_KEY,
-                secretAccessKey: process.env.AWS_SECRET_KEY,
-                region: process.env.AWS_REGION_KEY,
+                accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
+                secretAccessKey: process.env.REACT_APP_AWS_SECRET_KEY,
+                region: process.env.REACT_APP_AWS_REGION_KEY,
             });
 
             const s3 = new AWS.S3();
