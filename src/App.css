@@ -1,0 +1,53 @@
+/* 320px — 480px: Mobile devices
+481px — 768px: iPads, Tablets
+769px — 1024px: Small screens, laptops
+1025px — 1200px: Desktops, large screens
+1201px and more —  Extra large screens, TV */
+body{
+  padding:20px;
+}
+
+.SMS_Container{
+  border: 1px solid red;
+  display: flex;
+  justify-content: center;
+}
+
+.form_container{
+  /* display: flex; */
+  width: 100%;
+  max-width: 700px;
+  text-align: center;
+  border:1px solid blue;
+  padding: 10px;
+}
+
+
+@media only screen and (max-device-width: 480px) {
+
+  .Question_Container{
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .SMS_Container{
+    border: 1px solid blue;
+  }
+  .ant-tabs-nav-wrap{
+    /* position:fixed !important; */
+    /* bottom: 0 !important; */
+    display: flex !important;
+    text-align: center !important;
+    /* border: 1px solid red !important; */
+    justify-content: center !important;
+  }
+   .ant-tabs-tab-active{
+    background-color: #dadada !important;
+  }
+}
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;}
+  }
