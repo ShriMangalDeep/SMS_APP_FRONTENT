@@ -3,7 +3,6 @@ import { Form, Input, Button, InputNumber, Select, Row, Col, message } from 'ant
 import imageCompression from 'browser-image-compression';
 import AWS from 'aws-sdk';
 import axios from 'axios';
-
 const { TextArea } = Input;
 const { Option } = Select;
 const containsUnwantedSymbols = (value) => /[${};<>`]/.test(value);
@@ -41,24 +40,24 @@ const CreateNewPost = () => {
             }
 
             const jsonObject = {
-                productName: values.productName,
-                productType: values.productType,
-                productDescription: values.productDescription,
+                productName: values.productName.trim(),
+                productType: values.productType.trim(),
+                productDescription: values.productDescription.trim(),
                 productPrice: values.productPrice,
                 productWeight: values.productWeight,
                 productLabour: values.productLabour,
-                productMetalType: values.productMetalType,
+                productMetalType: values.productMetalType.trim(),
                 productExtraCharges: values.productExtraCharges,
                 productMediaURLs: [
                     ...uploadedImageURLs.map((imageUrl) => ({
                         mediaType: 'image',
-                        mediaURL: imageUrl,
+                        mediaURL: imageUrl.trim(),
                     }))
                 ],
             };
 
             console.log('Final JSON Object:', jsonObject);
-            let finalData = await axios.post('https://907edw5pi0.execute-api.eu-north-1.amazonaws.com/Dev/createPost', jsonObject, { header: { 'Content-Type': 'application/json' } });
+            let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL+'/createPost', jsonObject, { header: { 'Content-Type': 'application/json' } });
             console.log("finalUpload =>", finalData);
             message.success('New Post Create Succesffully');
         } catch (error) {
@@ -121,7 +120,7 @@ const CreateNewPost = () => {
             const uploadedURLs = await Promise.all(
                 files.map(async (file) => {
                     const params = {
-                        Bucket: 'postimages4',
+                        Bucket: process.env.REACT_APP_AWS_S3_BUCKET_NAME,
                         Key: `images/${Date.now()}-${productName.replace(/\s+/g, '_')}`,
                         Body: file,
                         ACL: 'public-read',
