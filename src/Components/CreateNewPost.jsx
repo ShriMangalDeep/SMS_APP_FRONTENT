@@ -22,7 +22,7 @@ const CreateNewPost = () => {
     const onFinish = async (values) => {
         try {
             // Upload compressed images to S3
-            const uploadedImageURLs = await uploadToS3(compressedImages,values.productName);
+            const uploadedImageURLs = await uploadToS3(compressedImages, values.productName);
 
             const mediaURLs = [
                 ...uploadedImageURLs.map((imageUrl) => ({
@@ -56,7 +56,7 @@ const CreateNewPost = () => {
             };
 
             console.log('Final JSON Object:', jsonObject);
-            let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL+'/createPost', jsonObject, { header: { 'Content-Type': 'application/json' } });
+            let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL + '/createPost', jsonObject, { header: { 'Content-Type': 'application/json' } });
             console.log("finalUpload =>", finalData);
             message.success('New Post Create Succesffully');
         } catch (error) {
@@ -104,7 +104,20 @@ const CreateNewPost = () => {
         setIsSubmitDisabled(true);
     };
 
-    const uploadToS3 = async (files,productName) => {
+    const handleChatGPTClick = () => {
+        const formData = form.getFieldsValue();
+        formData['productDescription']=""
+        const jsonString = JSON.stringify(formData, null, 2);
+        const chatGPTMessage = `I want a product description not more than 50 words or 500 character count, should be simple and short and feel royal : ${jsonString}`;
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(chatGPTMessage);
+        
+        // Display success message
+        message.success('Form JSON data copied to clipboard.');
+    };
+
+    const uploadToS3 = async (files, productName) => {
         try {
             // Configure AWS SDK with your credentials and S3 bucket information
             AWS.config.update({
@@ -134,7 +147,7 @@ const CreateNewPost = () => {
             return uploadedURLs;
         }
         catch (err) {
-            message.error('An error occurred while uploading images. Please try again. Error Message '+err.message);
+            message.error('An error occurred while uploading images. Please try again. Error Message ' + err.message);
         }
     };
 
@@ -145,12 +158,8 @@ const CreateNewPost = () => {
             onFinish={onFinish}
             initialValues={{ productExtraCharges: 0 }}
         >
-            <Form.Item label="Product Name" name="productName" rules={[{ required: true, message: 'Please enter product name' },{ validator: (_, value) => !containsUnwantedSymbols(value) ? Promise.resolve() : Promise.reject('Invalid characters in the field') }]}>
+            <Form.Item label="Product Name" name="productName" rules={[{ required: true, message: 'Please enter product name' }, { validator: (_, value) => !containsUnwantedSymbols(value) ? Promise.resolve() : Promise.reject('Invalid characters in the field') }]}>
                 <Input />
-            </Form.Item>
-
-            <Form.Item label="Product Description" name="productDescription" rules={[{ required: true, message: 'Please enter product description' },{ validator: (_, value) => !containsUnwantedSymbols(value) ? Promise.resolve() : Promise.reject('Invalid characters in the field') }]}>
-                <TextArea rows={4} />
             </Form.Item>
 
             <Row gutter={[16, 16]}>
@@ -252,6 +261,19 @@ const CreateNewPost = () => {
 
             <Form.Item label="Product Video URL" name="productVideoUrl">
                 <Input placeholder="Optional: Provide a video URL" onChange={handleVideoUrlChange} />
+            </Form.Item>
+
+            <Form.Item label="Product Description" name="productDescription" rules={[/* ... */]}>
+                <Row>
+                    <Col span={22}>
+                        <TextArea rows={4} />
+                    </Col>
+                    <Col span={2} style={{ textAlign: 'right' }}>
+                        <Button type="link" onClick={handleChatGPTClick}>
+                            ChatGPT
+                        </Button>
+                    </Col>
+                </Row>
             </Form.Item>
 
             <Form.Item>
