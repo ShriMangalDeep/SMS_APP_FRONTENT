@@ -43,7 +43,6 @@ const CreateNewPost = () => {
                 productName: values.productName.trim(),
                 productType: values.productType.trim(),
                 productDescription: values.productDescription.trim(),
-                productPrice: values.productPrice,
                 productWeight: values.productWeight,
                 productLabour: values.productLabour,
                 productMetalType: values.productMetalType.trim(),
@@ -230,17 +229,6 @@ const CreateNewPost = () => {
                         name="productExtraCharges"
                         rules={[
                             { type: 'number', min: 0, message: 'Please enter a valid extra charge value' },
-                        ]}
-                    >
-                        <InputNumber />
-                    </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} lg={8}>
-                    <Form.Item
-                        label="Product Price"
-                        name="productPrice"
-                        rules={[
-                            { required: true, type: 'number', min: 0, message: 'Please enter a valid price' },
                         ]}
                     >
                         <InputNumber />
