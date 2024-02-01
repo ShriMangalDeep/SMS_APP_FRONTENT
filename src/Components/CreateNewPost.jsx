@@ -14,8 +14,6 @@ const CreateNewPost = () => {
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
 
     useEffect(() => {
-        console.log(compressedImages.length);
-        console.log(originalMediaFiles.length + videoFiles.length);
         const allFilesUploaded = originalMediaFiles.length ===  compressedImages.length + videoFiles.length;
         setIsSubmitDisabled(!allFilesUploaded);
     }, [originalMediaFiles, compressedImages, videoFiles]);
@@ -41,9 +39,7 @@ const CreateNewPost = () => {
                 productMediaURLs: mediaURLs,
             };
 
-            console.log('Final JSON Object:', formData);
             let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL + '/createPost', formData, { header: { 'Content-Type': 'application/json' } });
-            console.log("finalUpload =>", finalData);
             message.success('New Post Create Succesffully');
         } catch (error) {
             console.error('Error:', error);
@@ -82,6 +78,7 @@ const CreateNewPost = () => {
         form.resetFields();
         setOriginalMediaFiles([]);
         setCompressedImages([]);
+        setVideoFiles([]);
         setIsSubmitDisabled(true);
     };
 
@@ -130,7 +127,6 @@ const CreateNewPost = () => {
             );
     
             message.success('Files uploaded successfully');
-            console.log(uploadedURLs)
             return uploadedURLs;
         } catch (error) {
             throw new Error('Error uploading files to S3: ' + error.message);
