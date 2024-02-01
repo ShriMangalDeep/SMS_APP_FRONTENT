@@ -8,148 +8,136 @@ const { Option } = Select;
 const containsUnwantedSymbols = (value) => /[${};<>`]/.test(value);
 const CreateNewPost = () => {
     const [form] = Form.useForm();
-    const [originalImages, setOriginalImages] = useState([]);
+    const [originalMediaFiles, setOriginalMediaFiles] = useState([]);
     const [compressedImages, setCompressedImages] = useState([]);
-    const [videoUrl, setVideoUrl] = useState('');
+    const [videoFiles, setVideoFiles] = useState([]);
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
 
     useEffect(() => {
-        // Check if all images are compressed
-        const allImagesCompressed = compressedImages.length === originalImages.length;
-        setIsSubmitDisabled(!allImagesCompressed);
-    }, [originalImages, compressedImages]);
+        console.log(compressedImages.length);
+        console.log(originalMediaFiles.length + videoFiles.length);
+        const allFilesUploaded = originalMediaFiles.length ===  compressedImages.length + videoFiles.length;
+        setIsSubmitDisabled(!allFilesUploaded);
+    }, [originalMediaFiles, compressedImages, videoFiles]);
 
     const onFinish = async (values) => {
         try {
-            // Upload compressed images to S3
             const uploadedImageURLs = await uploadToS3(compressedImages, values.productName);
+            const uploadedVideoURLs = await uploadToS3(videoFiles,  values.productName);
 
             const mediaURLs = [
                 ...uploadedImageURLs.map((imageUrl) => ({
                     mediaType: 'image',
-                    mediaURL: imageUrl,
+                    mediaURL: imageUrl.Location,
+                })),
+                ...uploadedVideoURLs.map((videoUrl) => ({
+                    mediaType: 'video',
+                    mediaURL: videoUrl.Location,
                 })),
             ];
 
-            // Only include video if a URL is provided
-            if (videoUrl.trim() !== '') {
-                mediaURLs.push({
-                    mediaType: 'video',
-                    mediaURL: videoUrl.trim(),
-                });
-            }
-
-            const jsonObject = {
-                productName: values.productName.trim(),
-                productType: values.productType.trim(),
-                productDescription: values.productDescription.trim(),
-                productWeight: values.productWeight,
-                productLabour: values.productLabour,
-                productMetalType: values.productMetalType.trim(),
-                productExtraCharges: values.productExtraCharges,
-                productMediaURLs: [
-                    ...uploadedImageURLs.map((imageUrl) => ({
-                        mediaType: 'image',
-                        mediaURL: imageUrl.trim(),
-                    }))
-                ],
+            const formData = {
+                ...values,
+                productMediaURLs: mediaURLs,
             };
 
-            console.log('Final JSON Object:', jsonObject);
-            let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL + '/createPost', jsonObject, { header: { 'Content-Type': 'application/json' } });
+            console.log('Final JSON Object:', formData);
+            let finalData = await axios.post(process.env.REACT_APP_AWS_BACKEND_URL + '/createPost', formData, { header: { 'Content-Type': 'application/json' } });
             console.log("finalUpload =>", finalData);
             message.success('New Post Create Succesffully');
         } catch (error) {
-            console.error('Error uploading images to S3:', error);
-            message.error('An error occurred while uploading images. Please try again.');
+            console.error('Error:', error);
+            message.error('An error occurred while submitting the form. Please try again.');
         }
     };
 
-    const handleImageUpload = async (event) => {
+    const handleMediaUpload = async (event) => {
         const files = event.target.files;
-        const newOriginalImages = Array.from(files);
+        const newOriginalMediaFiles = Array.from(files);
 
-        setOriginalImages(newOriginalImages);
-
-        const options = {
-            maxWidthOrHeight: 1920,
-            useWebWorker: true,
-        };
-
-        try {
-            const compressedFiles = await Promise.all(
-                newOriginalImages.map(async (imageFile) => {
-                    console.log(`Original File size: ${imageFile.size} MB`);
-                    const compressedFile = await imageCompression(imageFile, options);
-                    console.log(`Compressed File size: ${compressedFile.size} MB`);
+        setOriginalMediaFiles(newOriginalMediaFiles);
+        const compressedFiles = await Promise.all(
+            newOriginalMediaFiles.map(async (mediaFile) => {
+                if (mediaFile.type.startsWith('image')) {
+                    // Compress images
+                    const options = { maxWidthOrHeight: 1920, useWebWorker: true };
+                    const compressedFile = await imageCompression(mediaFile, options);
                     return compressedFile;
-                })
-            );
+                } else {
+                    // No need to compress videos
+                    return mediaFile;
+                }
+            })
+        );
 
-            setCompressedImages(compressedFiles);
-        } catch (error) {
-            console.log(error);
-        }
+        const compressedImages = compressedFiles.filter((file) => file.type.startsWith('image'));
+        const videoFiles = compressedFiles.filter((file) => !file.type.startsWith('image'));
+
+        setCompressedImages(compressedImages);
+        setVideoFiles(videoFiles);
     };
 
-    const handleVideoUrlChange = (event) => {
-        setVideoUrl(event.target.value);
-    };
 
     const handleClear = () => {
         form.resetFields();
-        setOriginalImages([]);
+        setOriginalMediaFiles([]);
         setCompressedImages([]);
-        setVideoUrl('');
         setIsSubmitDisabled(true);
     };
 
     const handleChatGPTClick = () => {
         const formData = form.getFieldsValue();
-        formData['productDescription']=""
+        formData['productDescription'] = ""
         const jsonString = JSON.stringify(formData, null, 2);
         const chatGPTMessage = `I want a product description not more than 50 words or 500 character count, should be simple and short and feel royal : ${jsonString}`;
-        
+
         // Copy to clipboard
         navigator.clipboard.writeText(chatGPTMessage);
-        
+
         // Display success message
         message.success('Form JSON data copied to clipboard.');
     };
 
     const uploadToS3 = async (files, productName) => {
         try {
-            // Configure AWS SDK with your credentials and S3 bucket information
             AWS.config.update({
                 accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
                 secretAccessKey: process.env.REACT_APP_AWS_SECRET_KEY,
                 region: process.env.REACT_APP_AWS_REGION_KEY,
             });
-
+    
             const s3 = new AWS.S3();
-
-            // Upload each file to S3 and get the URL
+    
             const uploadedURLs = await Promise.all(
-                files.map(async (file) => {
+                files.map(async (file, index) => {
+                    const isImage = file.type.startsWith('image');
+                    const keyPrefix = isImage ? 'images' : 'videos';
+    
+                    // Get the file extension
+                    const fileExtension = file.name.split('.').pop();
+    
                     const params = {
                         Bucket: process.env.REACT_APP_AWS_S3_BUCKET_NAME,
-                        Key: `images/${Date.now()}-${productName.replace(/\s+/g, '_')}`,
+                        Key: `${keyPrefix}/${Date.now()}-${productName.replace(/\s+/g, '_')}-${index}.${fileExtension}`,
                         Body: file,
                         ACL: 'public-read',
                         ContentType: file.type,
                     };
-
+    
                     const { Location } = await s3.upload(params).promise();
-                    return Location;
+                    return { Location, isImage }; // Return whether it's an image or video
                 })
             );
-            message.success('Successfully Uploaded Images.');
+    
+            message.success('Files uploaded successfully');
+            console.log(uploadedURLs)
             return uploadedURLs;
-        }
-        catch (err) {
-            message.error('An error occurred while uploading images. Please try again. Error Message ' + err.message);
+        } catch (error) {
+            throw new Error('Error uploading files to S3: ' + error.message);
         }
     };
+    
+
 
     return (
         <Form
@@ -195,7 +183,7 @@ const CreateNewPost = () => {
                         label="Product Metal Type"
                         name="productMetalType"
                         rules={[
-                            { required: true, type: 'enum', enum: ['gold', 'silver', 'platinum', 'imitation'], message: 'Invalid metal type' },
+                            { required: true, type: 'enum', enum: ['gold', 'silver', 'platinum', 'imitation', 'alloy'], message: 'Invalid metal type' },
                             { validator: (_, value) => !containsUnwantedSymbols(value) ? Promise.resolve() : Promise.reject('Invalid characters in the field') },
                         ]}
                     >
@@ -204,6 +192,7 @@ const CreateNewPost = () => {
                             <Option value="silver">Silver</Option>
                             <Option value="platinum">Platinum</Option>
                             <Option value="imitation">Imitation</Option>
+                            <Option value="alloy">Alloy</Option>
                         </Select>
                     </Form.Item>
                 </Col>
@@ -246,22 +235,27 @@ const CreateNewPost = () => {
             </Row>
 
             <Form.Item label="Product Media" name="productMediaURLs" valuePropName="fileList">
-                <input type="file" accept="image/*" onChange={handleImageUpload} multiple />
+                <input type="file" accept="image/*, video/*" onChange={handleMediaUpload} multiple />
                 <div>
-                    {compressedImages.map((compressedImage, index) => (
+                    {compressedImages.map((file, index) => (
                         <img
                             key={index}
-                            src={compressedImage && URL.createObjectURL(compressedImage)}
-                            alt={`Compressed Image ${index + 1}`}
+                            src={URL.createObjectURL(file)}
+                            alt={`File ${index + 1}`}
                             style={{ width: '100px', height: '100px', marginRight: '8px', marginBottom: '8px' }}
                         />
+                    ))}
+                    {videoFiles.map((video, index) => (
+                        <div key={index}>
+                            <video controls width="100" height="100">
+                                <source src={URL.createObjectURL(video)} type={video.type} />
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
                     ))}
                 </div>
             </Form.Item>
 
-            <Form.Item label="Product Video URL" name="productVideoUrl">
-                <Input placeholder="Optional: Provide a video URL" onChange={handleVideoUrlChange} />
-            </Form.Item>
 
             <Form.Item label="Product Description" name="productDescription" rules={[/* ... */]}>
                 <Row>
