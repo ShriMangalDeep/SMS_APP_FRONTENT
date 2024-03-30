@@ -51,3 +51,126 @@ body{
   body {
     -webkit-print-color-adjust: exact;}
   }
+
+  
+.feed-body {
+  display: flex;
+  justify-content: center;
+  padding: auto auto;
+}
+
+.feed-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feed-post {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 0.21fr 1.1fr 0.3fr;
+  gap: 0px 0em;
+  grid-template-areas: ".";
+  justify-items: stretch;
+  border: 1px solid white;
+  max-width: 449px;
+  height: 649px;
+}
+
+.feed-post-header {
+  border: 1px solid black;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px 11px;
+  gap: 1rem;
+}
+
+.feed-post-header h2 {
+  text-align: left;
+  overflow: hidden;
+  max-height: 65px;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.feed-post-photos {
+  border: 1px solid black;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+/* Hide scrollbar in Chrome */
+.feed-post-photos::-webkit-scrollbar {
+  display: none;
+}
+
+.photos {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  animation: scale 0.5s linear;
+  display: inline-block;
+  margin-right: 10px;
+  flex: none;
+}
+
+@keyframes scale {
+  from {
+    transform: scale(0.5);
+  }
+}
+
+.photos img,
+.photos video {
+  width: 100%;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photos p {
+  text-transform: capitalize;
+  letter-spacing: 2px;
+}
+
+.photos span {
+  color: chocolate;
+  margin: 0 10px;
+}
+
+.feed-post-description {
+  border: 1px solid black;
+  width: 100%;
+}
+
+.feed-post-photos {
+  position: relative;
+}
+
+.scroll-left,
+.scroll-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10; /* Adjust z-index as needed */
+  background-color: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  padding: 10px;
+}
+
+.scroll-left {
+  left: 0;
+}
+
+.scroll-right {
+  right: 0;
+}
+
