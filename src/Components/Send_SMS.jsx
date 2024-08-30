@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios';
-import { Form, Input, Button, Radio ,notification, Space} from 'antd'
+import { Form, Input, Button, Radio ,notification, Space, Select} from 'antd'
 
 const SMS_KEY=process.env.REACT_APP_SMS_KEY;
 
@@ -68,6 +68,10 @@ function Generate_Message(data) {
             ]
         case 'custom':
             return [data.message]
+        case 'scratch':
+            return [
+                `Thankyou for shopping with us! Enjoy your gift. Visit: https://smdp.netlify.app/?d=${data.name}_${data.productName} Need help? Call 9408276130.`
+            ]
         default :
             return [data.message]
     }
@@ -85,14 +89,15 @@ const Send_SMS = () => {
         messageText:"",
         amount:"",
         id:revisedRandId(),
-        wallet:""
+        wallet:"",
+        productName:""
     });
     const [loading, setloading] = useState(false)
 
     const onFinish = async (values) => {
         setloading(true);
         try{
-            const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=${SMS_KEY}&message=${smsData.messageText.trim()}&language=english&route=q&numbers=${smsData.phonenumber.trim()}`)
+            const response = await axios.get(`https://www.fast2sms.com/dev/bulkV2?authorization=${SMS_KEY}&message=${smsData.messageText.trim().replaceAll("&"," %26")}&language=english&route=q&numbers=${smsData.phonenumber.trim()}`)
             if(response.data.return)
             {
                 openNotification("success","SMS Sent",`SMS sent to ${smsData.name}`,'top')
@@ -150,7 +155,7 @@ const Send_SMS = () => {
         const msg=Generate_Message(smsData);
         const final_msg=msg[Math.floor(Math.random()*msg.length)]
         setsmsData({...smsData,messageText:final_msg})
-    },[smsData.name,smsData.id,smsData.amount,smsData.smstype]);
+    },[smsData.name,smsData.id,smsData.amount,smsData.smstype,smsData.productName]);
     return (
         <div className='SMS_Container'>
             <div className="form_container">
@@ -189,11 +194,13 @@ const Send_SMS = () => {
                             <Radio.Button value="amount"> Amount Payed </Radio.Button>
                             <Radio.Button value="id"> Customer ID </Radio.Button>
                             <Radio.Button value="custom"> Custom Message</Radio.Button>
+                            <Radio.Button value="scratch"> Scratch</Radio.Button>
                         </Radio.Group>
                     </Form.Item>
 
                     {
                         (() => {
+                            console.log(smsData);
                             switch (smsData.smstype) {
                                 case 'id':
                                     return <p>ID : {smsData.id}</p>;
@@ -204,6 +211,23 @@ const Send_SMS = () => {
                                         rules={[{ required: true, message: 'Please enter amount!' }]}
                                     >
                                         <Input showCount type={"number"} value={smsData.amount} onChange={(e)=>{setsmsData({...smsData,amount:e.target.value})}}/>
+                                    </Form.Item>;
+                                case 'scratch':
+                                    return <Form.Item
+                                        label="Enter Gift Name"
+                                        name="productName"
+                                        rules={[{ required: true, message: 'Please enter Gift Name!' }]}
+                                    >
+                                        <Select value={smsData.productName} onChange={(e)=>{setsmsData({...smsData,productName:e})}} >
+                                            <Select.Option value="1">Ring</Select.Option>
+                                            <Select.Option value="2">Earrings</Select.Option>
+                                            <Select.Option value="3">Bracelet</Select.Option>
+                                            <Select.Option value="4">Pendant</Select.Option>
+                                            <Select.Option value="5">Bangles</Select.Option>
+                                            <Select.Option value="6">chains</Select.Option>
+                                            <Select.Option value="7">Cash Back</Select.Option>
+                                            <Select.Option value="8">Better Luck Next Time</Select.Option>
+                                        </Select>
                                     </Form.Item>;
                                 case 'custom':
                                     return <p>Plz enter your custom message below</p>
