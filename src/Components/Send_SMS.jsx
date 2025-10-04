@@ -62,9 +62,7 @@ function Generate_Message(data) {
             ]
         case 'amount':
             return [
-                `Thank you ${data.name}, we have received your payment for ${data.amount} Rs. We also accept online payment at 9408276130.`,
-                `Thankyou ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130.`,
-                `Welcome ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130.`
+                `Thankyou ${data.name}, we got your payment of ${data.amount} Rs. We also accept online payment at 9408276130, by SG & MD Jewelers.`,
             ]
         case 'custom':
             return [data.message]
